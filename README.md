@@ -1,4 +1,4 @@
-#  Jast for study purpose  
+#  Just for study purpose  
 
 ### In thes repo, we will biuld a jlox interpreter by using the book Crafting Interpreters by Bob Nystrom.
 
