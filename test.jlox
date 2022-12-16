@@ -1,4 +1,8 @@
-var x = "salah";
-var y = "osama";
-var z = "koko";
-print x +" "+ y + " " + z ;
+var a = 0;
+var temp;
+
+for (var b = 1; a < 100000; b = temp + b) {
+  print a;
+  temp = a;
+  a = b;
+}

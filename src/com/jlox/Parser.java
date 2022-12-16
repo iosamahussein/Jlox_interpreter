@@ -2,8 +2,10 @@ package com.jlox;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 
 import static com.jlox.TokenType.*;
+
 // *********************************************************************
 // don't trace the code in this class because it has recursion functions
 // *********************************************************************
@@ -53,12 +55,86 @@ class Parser {
 
     // statement : printStatement | expressionStatement | block ;
     private Stmt statement() {
+        if (match(IF))
+            return ifStatement();
+        if (match(FOR))
+            return forStatement();
+        if (match(WHILE))
+            return whileStatement();
         if (match(PRINT))
             return printStatement();
         if (match(LEFT_BRACE))
             return new Stmt.Block(block());
 
         return expressionStatement();
+    }
+
+    // for statement : "for" "(" ( varDeclaration | expressionStatement | ";" )
+    // expression? ";" expression? ")" statement ;
+    private Stmt forStatement() {
+        consume(LEFT_PAREN, "Expect '(' after 'for'.");
+        // if the next token is a semicolon, then the initializer is null
+        Stmt initializer;
+        if (match(SEMICOLON)) {
+            initializer = null;
+        } else if (match(VAR)) {
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+        // if the next token is a semicolon, then the condition is null
+        Expr condition = null;
+        if (!check(SEMICOLON)) {
+            condition = expression();
+        }
+        consume(SEMICOLON, "Expect ';' after loop condition.");
+
+        Expr increment = null;
+        if (!check(RIGHT_PAREN)) {
+            increment = expression();
+        }
+        consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        Stmt body = statement();
+        // if the increment is not null, then add it to the body
+        if (increment != null) {
+            body = new Stmt.Block(Arrays.asList(body, new Stmt.Expression(increment)));
+        }
+        // if the condition is null, then set it to true
+        if (condition == null)
+            condition = new Expr.Literal(true);
+        body = new Stmt.While(condition, body);
+        // if the initializer is not null, then add it to the body
+        if (initializer != null) {
+            body = new Stmt.Block(Arrays.asList(initializer, body));
+        }
+
+        return body;
+    }
+
+    // whileStatement : "while" "(" expression ")" statement ;
+    private Stmt whileStatement() {
+        consume(LEFT_PAREN, "Expect '(' after 'while'.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after condition.");
+        Stmt body = statement();
+
+        return new Stmt.While(condition, body);
+    }
+
+    // ifStatement : "if" "(" expression ")" statement ( "else" statement )? ;
+    private Stmt ifStatement() {
+        consume(LEFT_PAREN, "Expect '(' after 'if'.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after if condition.");
+
+        Stmt thenBranch = statement();
+        Stmt elseBranch = null;
+        if (match(ELSE)) {
+            elseBranch = statement();
+        }
+
+        return new Stmt.If(condition, thenBranch, elseBranch);
     }
 
     // printStatement : "print" expression ";" ;
@@ -98,7 +174,8 @@ class Parser {
 
     // assignment : ( call "." )? IDENTIFIER "=" assignment | logic_or ;
     private Expr assignment() {
-        Expr expr = equality();
+
+        Expr expr = or();
         if (match(EQUAL)) {
             Token equals = previous();
             Expr value = assignment();
@@ -107,6 +184,28 @@ class Parser {
                 return new Expr.Assign(name, value);
             }
             error(equals, "Invalid assignment target.");
+        }
+        return expr;
+    }
+
+    // or : and ( "or" and )* ;
+    private Expr or() {
+        Expr expr = and();
+        while (match(OR)) {
+            Token operator = previous();
+            Expr right = and();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+        return expr;
+    }
+
+    // and : equality ( "and" equality )* ;
+    private Expr and() {
+        Expr expr = equality();
+        while (match(AND)) {
+            Token operator = previous();
+            Expr right = equality();
+            expr = new Expr.Logical(expr, operator, right);
         }
         return expr;
     }

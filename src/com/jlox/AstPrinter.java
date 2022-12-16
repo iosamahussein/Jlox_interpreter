@@ -1,6 +1,7 @@
 package com.jlox;
 
 import com.jlox.Expr.Assign;
+import com.jlox.Expr.Logical;
 import com.jlox.Expr.Variable;
 // AstPrinter class is a subclass of Expr.Visitor<String> to print the AST
 // AST is an abstract syntax tree
@@ -54,6 +55,11 @@ class AstPrinter implements Expr.Visitor<String> {
     @Override
     public String visitVariableExpr(Variable expr) {
         // TODO Auto-generated method
+        return null;
+    }
+    @Override
+    public String visitLogicalExpr(Logical expr) {
+        // TODO Auto-generated method stub
         return null;
     }
 

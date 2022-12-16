@@ -2,18 +2,15 @@ package com.jlox;
 
 import java.util.List;
 
-// Stmt is an abstract class to represent statements
 abstract class Stmt {
   interface Visitor<R> {
     R visitBlockStmt(Block stmt);
-
     R visitExpressionStmt(Expression stmt);
-
+    R visitIfStmt(If stmt);
     R visitPrintStmt(Print stmt);
-
     R visitVarStmt(Var stmt);
+    R visitWhileStmt(While stmt);
   }
-  // Block class is a subclass of Stmt to represent block statements like { print 1; }
   static class Block extends Stmt {
     Block(List<Stmt> statements) {
       this.statements = statements;
@@ -25,7 +22,6 @@ abstract class Stmt {
 
     final List<Stmt> statements;
   }
-  // Expression class is a subclass of Stmt to represent expression statements like 1;
   static class Expression extends Stmt {
     Expression(Expr expression) {
       this.expression = expression;
@@ -37,7 +33,21 @@ abstract class Stmt {
 
     final Expr expression;
   }
-  // Print class is a subclass of Stmt to represent print statements like print 1;
+  static class If extends Stmt {
+    If(Expr condition, Stmt thenBranch, Stmt elseBranch) {
+      this.condition = condition;
+      this.thenBranch = thenBranch;
+      this.elseBranch = elseBranch;
+    }
+
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitIfStmt(this);
+    }
+
+    final Expr condition;
+    final Stmt thenBranch;
+    final Stmt elseBranch;
+  }
   static class Print extends Stmt {
     Print(Expr expression) {
       this.expression = expression;
@@ -49,7 +59,6 @@ abstract class Stmt {
 
     final Expr expression;
   }
-  // Var class is a subclass of Stmt to represent variable declarations like var a = 1;
   static class Var extends Stmt {
     Var(Token name, Expr initializer) {
       this.name = name;
@@ -63,6 +72,19 @@ abstract class Stmt {
     final Token name;
     final Expr initializer;
   }
-  
+  static class While extends Stmt {
+    While(Expr condition, Stmt body) {
+      this.condition = condition;
+      this.body = body;
+    }
+
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitWhileStmt(this);
+    }
+
+    final Expr condition;
+    final Stmt body;
+  }
+
   abstract <R> R accept(Visitor<R> visitor);
 }

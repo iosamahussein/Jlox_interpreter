@@ -4,12 +4,15 @@ import java.util.List;
 import com.jlox.Expr.Binary;
 import com.jlox.Expr.Grouping;
 import com.jlox.Expr.Literal;
+import com.jlox.Expr.Logical;
 import com.jlox.Expr.Unary;
 import com.jlox.Expr.Variable;
 import com.jlox.Stmt.Block;
 import com.jlox.Stmt.Expression;
+import com.jlox.Stmt.If;
 import com.jlox.Stmt.Print;
 import com.jlox.Stmt.Var;
+import com.jlox.Stmt.While;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // environment is a private variable because it is only used by the Interpreter
@@ -231,6 +234,46 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
         executeBlock(stmt.statements, new Environment(environment));
+        return null;
+    }
+
+    // if statements are executed by evaluating the condition and then executing the
+    // then branch
+    @Override
+    public Void visitIfStmt(If stmt) {
+        if (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.thenBranch);
+        } else if (stmt.elseBranch != null) {
+            execute(stmt.elseBranch);
+        }
+        return null;
+    }
+
+    // logical expressions are evaluated by evaluating the left operand and then the
+    // right operand
+    @Override
+    public Object visitLogicalExpr(Expr.Logical expr) {
+        Object left = evaluate(expr.left);
+        // if the operator is OR and the left operand is truthy, then the result is the
+        // left operand
+        // if the operator is AND and the left operand is falsy, then the result is the
+        // left operand
+        // otherwise, the result is the right operand
+        if (expr.operator.type == TokenType.OR) {
+            if (isTruthy(left))
+                return left;
+        } else {
+            if (!isTruthy(left))
+                return left;
+        }
+        return evaluate(expr.right);
+    }
+    // while statements are executed by evaluating the condition and then executing
+    @Override
+    public Void visitWhileStmt(While stmt) {
+        while (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body);
+        }
         return null;
     }
 
