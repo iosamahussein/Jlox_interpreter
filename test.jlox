@@ -1,0 +1,4 @@
+var x = "salah";
+var y = "osama";
+var z = "koko";
+print x +" "+ y + " " + z ;

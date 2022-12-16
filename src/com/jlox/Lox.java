@@ -17,7 +17,10 @@ import java.nio.file.Paths;
 public class Lox {
     // hadErrors is a static variable because it is shared by all instances of the
     // Lox class.
-    private static boolean hadError = false;
+    static boolean hadError = false;
+    static boolean hadRuntimeError = false;
+    // interpreter is a static variable because it is shared by all instances of the
+    private static final Interpreter interpreter = new Interpreter();
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -67,12 +70,31 @@ public class Lox {
         Scanner scanner = new Scanner(source);
         // create a new List of Tokens.
         List<Token> tokens = scanner.scanTokens();
-        // print the tokens.
-        for (Token token : tokens) {
-            System.out.println(token);
+
+        // create a new Parser that will parse the tokens.
+        Parser parser = new Parser(tokens);
+        // create a new Expr that will hold the AST.
+        List<Stmt> statements = parser.parse();
+        // stop if there was a syntax error.
+        if (hadError)
+            System.exit(65);
+        if (hadRuntimeError)
+            System.exit(70);
+
+        interpreter.interpret(statements);
+
+    }
+
+    // parser error.
+    static void error(Token token, String message) {
+        if (token.type == TokenType.EOF) {
+            report(token.line, " at end", message);
+        } else {
+            report(token.line, " at '" + token.lexeme + "'", message);
         }
     }
 
+    // scanner error.
     static void error(int line, String message) {
         // print the error message.
         report(line, "", message);
@@ -83,5 +105,11 @@ public class Lox {
         System.err.println(
                 "[line " + line + "] Error" + where + ": " + message);
         hadError = true;
+    }
+    // runtime error.
+    static void runtimeError(RuntimeError error) {
+        System.err.println(error.getMessage() +
+                "\n[line " + error.token.line + "]");
+        hadRuntimeError = true;
     }
 }
